@@ -1,0 +1,9 @@
+[book]
+authors = ["herbert"]
+language = "en"
+src = "src"
+title = "Example diagram"
+
+
+[preprocessor.plantuml]
+plantuml-cmd="http://localhost:8080"
