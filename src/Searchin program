@@ -1,79 +1,68 @@
-
-
-
 {attribute :Pragma;}
 Program PLC_PRG
 VAR
-     (* Analoge ingangen van sensor *)
-    Distance : REAL;   (* 0..10V komt overeen met 0..100 mm *)
-    Color_Red      : REAL;   (* 0..10V roodintensiteit *)
-    Color_Green    : REAL;   (* 0..10V groenintensiteit *)
-    Color_Blue     : REAL;   (* 0..10V blauwintensiteit *)
+    Distance : REAL;
+    Color_Red : REAL;
+    Color_Green : REAL;
+    Color_Blue : REAL;
 
-    (* Bewerktedata *)
     Distance_mm : REAL;
-    SumRGB      : REAL;
+    SumRGB : REAL;
     NormR, NormG, NormB : REAL;
 
-  
-	
-	(*Distance to move*)
-	MoveX : REAL := 0.0; (*20mm in the positive direction*)
-	MoveY : REAL := 0.0; (*20mm in the positive direction*)
-	MoveZ : REAL := 0.0; (*20mm in the positive direction*)
-	
-	ValueForRed : INT:= 20; (*this is going to be the value that we need*)
-	DetectRange : REAL := 100.0; (* The range that the sensor is stil valid*)
-	
-	(* Statemachine*) 
-	Step_nr : INT := 0;
+    MoveX : REAL := 0.0;
+    MoveY : REAL := 0.0;
+    MoveZ : REAL := 0.0;
+    
+    ValueForRed : INT := 20;
+    DetectRange : REAL := 100.0;
+    
+    Step_nr : INT := 0;
+    Found : BOOL := FALSE;
 END_VAR
 
+Distance_mm := (Distance / 10.0) * 100.0;
 
-
-(* Bereken de afstand *)
-Distance_mm := (Distance / 10.0) * 100.0; (* 0-10V, 0-100 mm *)
-
-(* Controleer of de grijper al op de juiste plaats is *)
 IF (Distance_mm > DetectRange AND Color_Red > ValueForRed) THEN
-    (* Als het goed is, reset de stappen en doe niets anders in deze logica *)
-    step_nr := 0;
-ELSE
-    (* Als de grijper niet op de juiste plek is, start of vervolg de zoektocht *)
-    CASE step_nr OF
-        0: (* Begin: Probeer de eerste beweging *)
-		IF (Distance_mm > DetectRange AND Color_Red > ValueForRed) THEN
-			step_nr := 0;
-		ELSE
-            MoveX := MoveX + 20.0;
-            step_nr := 1; (* Ga naar de volgende stap voor de volgende cyclus *)
-        END_IF    
-        1: (* Tweede poging *)
-		IF (Distance_mm > DetectRange AND Color_Red > ValueForRed) THEN
-			step_nr := 0;
-		ELSE
-            MoveX := MoveX - 20.0;
-            MoveY := MoveY + 20.0;
-            step_nr := 2;
-        END_IF    
-        2: (* Derde poging *)
-		IF (Distance_mm > DetectRange AND Color_Red > ValueForRed) THEN
-			step_nr :=0;
-		ELSE
-            MoveY := MoveY - 40.0;
-            step_nr := 3;
-        END_IF    
-        3: (* Vierde poging *)
-		IF (Distance_mm > DetectRange AND Color_Red > ValueForRed) THEN
-			step_nr :=0;
-		ELSE
-            MoveY := MoveY + 20.0;
-            MoveX := MoveX - 20.0;
-            step_nr := 4; (* Optioneel: stop hier of ga terug naar 0 om te herhalen *)
-        END_IF
-        4: (* Klaar met pogingen of wacht op de volgende cyclus *)
+    Found := TRUE;
+    Step_nr := 99; 
+END_IF
+
+IF NOT Found THEN
+    CASE Step_nr OF
+        0: 
+            MoveX := MoveX + 20.0; 
+            Step_nr := 1;
+
+        1: 
+            MoveY := MoveY + 20.0; 
+            Step_nr := 2;
+
+        2: 
+            MoveX := MoveX - 40.0; 
+            Step_nr := 3;
+
+        3: 
+            MoveY := MoveY - 40.0; 
+            Step_nr := 4;
+
+        4: 
+            MoveX := MoveX + 60.0; 
+            Step_nr := 5;
+
+        5: 
+            MoveY := MoveY + 60.0; 
+            Step_nr := 6;
+
+        6: 
+            MoveX := MoveX - 80.0; 
+            Step_nr := 7;
+
+        7: 
+            MoveY := MoveY - 80.0; 
+            Step_nr := 99;
+
+        99: 
             ;
     END_CASE
-
-
 END_IF
