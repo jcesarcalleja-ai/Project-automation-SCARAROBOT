@@ -1,68 +1,75 @@
 {attribute :Pragma;}
 Program PLC_PRG
 VAR
-    Distance : REAL;
-    Color_Red : REAL;
-    Color_Green : REAL;
-    Color_Blue : REAL;
-
-    Distance_mm : REAL;
-    SumRGB : REAL;
-    NormR, NormG, NormB : REAL;
-
-    MoveX : REAL := 0.0;
-    MoveY : REAL := 0.0;
-    MoveZ : REAL := 0.0;
+    Distance, Color_Red, Distance_mm : REAL;
+    ValueForRed : INT := 20; 
+    DetectRange : REAL := 100.0; 
     
-    ValueForRed : INT := 20;
-    DetectRange : REAL := 100.0;
+    MoveX, MoveY : REAL := 0.0; 
+    Speed        : REAL := 0.5;
+
     
-    Step_nr : INT := 0;
-    Found : BOOL := FALSE;
+    Max_Radius     : REAL := 50.0;    
+    Increment      : REAL := 16.666;  
+    Current_Radius : REAL := 16.666;  
+    Loop_Counter   : INT := 1;        
+    
+    Step_nr      : INT := 0;
+    Object_Found : BOOL := FALSE; 
+    Finished     : BOOL := FALSE; 
 END_VAR
 
-Distance_mm := (Distance / 10.0) * 100.0;
+Distance_mm := (Distance / 10.0) * 100.0; 
 
 IF (Distance_mm > DetectRange AND Color_Red > ValueForRed) THEN
-    Found := TRUE;
-    Step_nr := 99; 
+    Object_Found := TRUE; 
 END_IF
 
-IF NOT Found THEN
+IF NOT Object_Found AND NOT Finished THEN
     CASE Step_nr OF
         0: 
-            MoveX := MoveX + 20.0; 
-            Step_nr := 1;
+           IF MoveX < Current_Radius THEN 
+               MoveX := MoveX + Speed;
+           ELSE 
+               Step_nr := 1; 
+           END_IF
 
         1: 
-            MoveY := MoveY + 20.0; 
-            Step_nr := 2;
+           IF MoveY < Current_Radius THEN 
+               MoveY := MoveY + Speed;
+           ELSE 
+               Step_nr := 2; 
+           END_IF
 
         2: 
-            MoveX := MoveX - 40.0; 
-            Step_nr := 3;
+           IF MoveX > (Current_Radius * -1.0) THEN 
+               MoveX := MoveX - Speed;
+           ELSE 
+               Step_nr := 3; 
+           END_IF
 
         3: 
-            MoveY := MoveY - 40.0; 
-            Step_nr := 4;
+           IF MoveY > (Current_Radius * -1.0) THEN 
+               MoveY := MoveY - Speed;
+           ELSE 
+               Step_nr := 4; 
+           END_IF
 
         4: 
-            MoveX := MoveX + 60.0; 
-            Step_nr := 5;
+           IF Loop_Counter < 3 THEN
+               Loop_Counter := Loop_Counter + 1;
+               Current_Radius := Current_Radius + Increment; 
+               
+               IF Current_Radius > Max_Radius THEN 
+                   Current_Radius := Max_Radius; 
+               END_IF;
+               
+               Step_nr := 0; 
+           ELSE
+               Finished := TRUE; 
+               Step_nr := 99;
+           END_IF
 
-        5: 
-            MoveY := MoveY + 60.0; 
-            Step_nr := 6;
-
-        6: 
-            MoveX := MoveX - 80.0; 
-            Step_nr := 7;
-
-        7: 
-            MoveY := MoveY - 80.0; 
-            Step_nr := 99;
-
-        99: 
-            ;
+        99: ; 
     END_CASE
 END_IF
