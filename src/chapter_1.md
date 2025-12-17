@@ -20,3 +20,4 @@ Bert -> ernie : moi
 @enduml
 
 ```
+[Chapter 3](./chapter_3.md)
